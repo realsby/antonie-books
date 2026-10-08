@@ -83,6 +83,8 @@ Settings (env variables):
 |---|---|---|
 | `MONGO_URL` | `mongodb://localhost:27017` | MongoDB connection string |
 | `DB_NAME` | `books` | Database name |
+| `MONGO_USER` | (empty) | MongoDB user. Empty locally, because local MongoDB has no login. |
+| `MONGO_PASSWORD` | (empty) | MongoDB password. In AWS it comes from Secrets Manager. |
 | `SEED_DATA` | (empty) | Set to `true` to add the sample books |
 
 ### How books and authors connect
@@ -124,7 +126,7 @@ If you delete a book, its authors stay. Their `book_count` goes down.
 | GET | `/authors/{id}/books` | All books of one author | 200 |
 | PATCH | `/authors/{id}` | Set the birth date of an author | 200 |
 | GET | `/publishers/{name}/average_pages` | Average pages of a publisher | 200 |
-| GET | `/health` | The app and the database are running | 200 |
+| GET | `/health` | The app is running | 200 |
 
 ### GET /books
 
@@ -377,4 +379,5 @@ uv run pytest tests/unit
 - **Times are in UTC.** The sample times have `+03:00`. MongoDB saves them in UTC, so `2017-01-12T00:00:00+03:00` comes back as `2017-01-11T21:00:00Z`.
 - **The sample books keep their sample times.** New books get the current time.
 - **Filters are safe.** The API escapes the filter text, so a user can not send a regex. `?title=.*` looks for the text `.*`.
+- **`/health` does not check the database.** The load balancer uses it. If MongoDB is down, we do not want AWS to restart all containers. API calls return `503` in that case.
 - **The container runs as a normal user** (not root), with a read-only file system.

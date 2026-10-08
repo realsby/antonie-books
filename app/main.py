@@ -8,7 +8,7 @@ from pymongo import AsyncMongoClient
 from pymongo.errors import ConnectionFailure
 
 from app import authors, books, publishers
-from app.db import DB, setup_db
+from app.db import setup_db
 from app.seed import seed
 
 log = logging.getLogger("app")
@@ -19,8 +19,12 @@ async def lifespan(app: FastAPI):
     mongo_url = os.getenv("MONGO_URL", "mongodb://localhost:27017")
     db_name = os.getenv("DB_NAME", "books")
 
+    # In AWS the user and password come from env variables, not from the URL.
+    # Locally they are empty, so MongoDB runs without a login.
     client = AsyncMongoClient(
         mongo_url,
+        username=os.getenv("MONGO_USER"),
+        password=os.getenv("MONGO_PASSWORD"),
         tz_aware=True,  # Dates come back with their time zone (UTC).
         serverSelectionTimeoutMS=5000,
     )
@@ -47,6 +51,7 @@ async def db_down(request: Request, error: ConnectionFailure):
 
 
 @app.get("/health", tags=["health"])
-async def health(db: DB):
-    await db.command("ping")
+async def health():
+    # The load balancer calls this. It does not check the database on purpose:
+    # if MongoDB is down, we do not want AWS to restart all containers.
     return {"status": "ok"}

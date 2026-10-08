@@ -1,0 +1,5 @@
+# Copy this file to terraform.tfvars and fill in the values.
+aws_region      = "eu-west-1"
+certificate_arn = "arn:aws:acm:eu-west-1:123456789012:certificate/xxxx"
+image_tag       = "6ff4d68"
+atlas_org_id    = "xxxxxxxxxxxxxxxxxxxxxxxx"
