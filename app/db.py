@@ -24,6 +24,7 @@ async def setup_db(db: AsyncDatabase):
     # create_index does nothing if the index is already there.
     await db.books.create_index("id", unique=True)
     await db.books.create_index("author_ids")
+    await db.books.create_index("publisher", collation=IGNORE_CASE)
     await db.authors.create_index("id", unique=True)
     # Not unique: two authors can have the same name.
     await db.authors.create_index("name", collation=IGNORE_CASE)

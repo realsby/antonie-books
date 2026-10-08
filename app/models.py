@@ -140,3 +140,9 @@ class Author(BaseModel):
 
 class AuthorWithCount(Author):
     book_count: int
+
+
+class PublisherStats(BaseModel):
+    publisher: str
+    book_count: int
+    average_pages: float
