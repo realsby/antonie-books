@@ -37,7 +37,7 @@ def api(mongo):
 
 @pytest.fixture(autouse=True)
 def clean_db(mongo):
-    for name in ["books"]:
+    for name in ["books", "authors", "counters"]:
         mongo[name].delete_many({})
 
 
@@ -55,7 +55,9 @@ def add_book(api):
 
     def add(id, **fields):
         book = {"id": id, "title": f"Book {id}", "publisher": "Test Press", "author": "Test Author", "pages": 100}
-        response = api.post("/books", json={**book, **fields})
+        # A field with the value None is not sent.
+        body = {key: value for key, value in {**book, **fields}.items() if value is not None}
+        response = api.post("/books", json=body)
         assert response.status_code == 201, response.text
         return response.json()
 

@@ -6,6 +6,7 @@ from pymongo import ReturnDocument
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import DuplicateKeyError
 
+from app.authors import link_authors
 from app.db import DB, NO_ID
 from app.models import Book, BookIn, BookPage, BookUpdate
 
@@ -24,6 +25,7 @@ def not_found() -> HTTPException:
 
 async def save_book(db: AsyncDatabase, book: BookIn, time: datetime) -> dict:
     data = book.model_dump()
+    data.update(await link_authors(db, book.author, book.author_ids))
     data["created_at"] = time
     data["updated_at"] = time
     await db.books.insert_one(data)
@@ -73,6 +75,8 @@ async def update_book(book_id: int, body: BookUpdate, db: DB):
     if await db.books.find_one({"id": book_id}) is None:
         raise not_found()
 
+    if "author" in changes or "author_ids" in changes:
+        changes.update(await link_authors(db, changes.get("author"), changes.get("author_ids")))
     changes["updated_at"] = now()
 
     book = await db.books.find_one_and_update(

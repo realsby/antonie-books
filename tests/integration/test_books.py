@@ -17,6 +17,7 @@ def test_create_book(api):
     data = response.json()
     assert data["title"] == "Fluent Python"
     assert data["tags"] == []
+    assert data["author_ids"] == [1]
     assert data["created_at"] == data["updated_at"]
 
 
@@ -43,6 +44,7 @@ def test_create_same_id_twice(api, add_book):
         {"id": 1, "title": "No pages", "publisher": "P", "author": "A"},
         {"id": 1, "title": "Bad pages", "publisher": "P", "author": "A", "pages": "many"},
         {"id": -1, "title": "Bad id", "publisher": "P", "author": "A", "pages": 1},
+        {"id": 1, "title": "No author name", "publisher": "P", "author": ",", "pages": 1},
     ],
 )
 def test_create_bad_book(api, body):
@@ -125,6 +127,12 @@ def test_update_book(api, sample_books):
     assert api.get("/books/1").json() == after
 
 
+def test_update_author_links_new_author(api, sample_books):
+    response = api.patch("/books/1", json={"author": "mark lutz, New Writer"})
+    assert response.json()["author_ids"] == [1, 4]
+    assert response.json()["author"] == "Mark Lutz, New Writer"
+
+
 def test_update_nothing(api, sample_books):
     response = api.patch("/books/1", json={})
     assert response.status_code == 400
@@ -144,6 +152,11 @@ def test_update_bad_value(api, sample_books):
 def test_update_missing_book(api):
     response = api.patch("/books/999", json={"pages": 10})
     assert response.status_code == 404
+
+
+def test_update_missing_book_adds_no_author(api):
+    api.patch("/books/999", json={"author": "Ghost Writer"})
+    assert api.get("/authors").json() == []
 
 
 # --- DELETE /books/{id}
