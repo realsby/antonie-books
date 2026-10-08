@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    # Same as in AWS: the app can not write files.
+    read_only: true
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: books
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8.0
+    # Only this computer can reach the database.
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mongo-data:
