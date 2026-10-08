@@ -1,3 +1,4 @@
+# trivy:ignore:AWS-0053 This is a public API, so the load balancer is public on purpose.
 resource "aws_lb" "main" {
   name               = var.name
   load_balancer_type = "application"

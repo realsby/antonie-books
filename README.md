@@ -8,6 +8,7 @@ It has:
 - Authors with their own ids, and a book count for each author
 - Average pages for a publisher
 - Unit and integration tests
+- Terraform for AWS (see [terraform/README.md](terraform/README.md))
 
 ## Project files
 
@@ -23,6 +24,7 @@ app/
 tests/
   unit/           Tests without a database
   integration/    Tests with a real MongoDB
+terraform/        AWS setup
 Dockerfile
 docker-compose.yml
 ```
@@ -369,6 +371,18 @@ Only the unit tests (no MongoDB needed):
 ```bash
 uv run pytest tests/unit
 ```
+
+## Terraform (AWS)
+
+The `terraform/` folder has the AWS setup for production:
+
+- ECS Fargate runs the containers in private subnets, in 2 AZs.
+- An Application Load Balancer gets the HTTPS traffic.
+- MongoDB Atlas is the database. The app reaches it over AWS PrivateLink, so the traffic does not go over the internet.
+- The private subnets have no internet access. The containers use VPC endpoints for ECR, logs and secrets.
+- The database password is not in the Terraform state.
+
+See [terraform/README.md](terraform/README.md) for the design and the reasons.
 
 ## Decisions
 

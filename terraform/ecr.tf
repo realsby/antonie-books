@@ -1,3 +1,4 @@
+# trivy:ignore:AWS-0033 AWS-managed encryption (AES-256) is enough for the images.
 resource "aws_ecr_repository" "app" {
   name = var.name
 

@@ -1,4 +1,5 @@
-# Traffic can only go: internet -> load balancer -> containers -> Atlas endpoint.
+# Traffic can only go: internet -> load balancer -> containers -> endpoints (AWS services and Atlas).
+# No rule allows traffic to the internet from the private subnets.
 
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb"
@@ -48,11 +49,46 @@ resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
   description                  = "From the load balancer"
 }
 
-resource "aws_vpc_security_group_egress_rule" "app_out" {
+resource "aws_vpc_security_group_egress_rule" "app_to_endpoints" {
+  security_group_id            = aws_security_group.app.id
+  referenced_security_group_id = aws_security_group.endpoints.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "To ECR, CloudWatch Logs and Secrets Manager"
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_to_s3" {
   security_group_id = aws_security_group.app.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1"
-  description       = "ECR, CloudWatch Logs, Secrets Manager (via NAT) and Atlas (via the private endpoint)"
+  prefix_list_id    = aws_vpc_endpoint.s3.prefix_list_id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  description       = "To S3, for the image layers"
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_to_atlas" {
+  security_group_id            = aws_security_group.app.id
+  referenced_security_group_id = aws_security_group.atlas.id
+  ip_protocol                  = "tcp"
+  from_port                    = 1024
+  to_port                      = 65535
+  description                  = "To the Atlas private endpoint"
+}
+
+resource "aws_security_group" "endpoints" {
+  name        = "${var.name}-endpoints"
+  description = "VPC endpoints for AWS services. Only the containers can reach them."
+  vpc_id      = aws_vpc.main.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "endpoints_from_app" {
+  security_group_id            = aws_security_group.endpoints.id
+  referenced_security_group_id = aws_security_group.app.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "HTTPS from the containers"
 }
 
 resource "aws_security_group" "atlas" {

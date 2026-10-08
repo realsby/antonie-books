@@ -103,6 +103,7 @@ resource "mongodbatlas_database_user" "app" {
   }
 }
 
+# trivy:ignore:AWS-0098 The AWS-managed key is enough. Only the ECS execution role can read the secret.
 resource "aws_secretsmanager_secret" "db_password" {
   name = "${var.name}/db-password"
 }

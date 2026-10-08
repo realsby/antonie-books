@@ -7,6 +7,7 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
+# trivy:ignore:AWS-0017 AWS-managed encryption is enough. The app does not log personal data.
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.name}"
   retention_in_days = 30
