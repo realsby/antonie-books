@@ -9,7 +9,7 @@ from pymongo.errors import DuplicateKeyError
 
 from app.authors import link_authors
 from app.db import DB, NO_ID
-from app.models import Book, BookIn, BookPage, BookUpdate
+from app.models import Book, BookIn, BookPage, BookUpdate, PathId
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -60,7 +60,7 @@ async def save_book(db: AsyncDatabase, book: BookIn, time: datetime) -> dict:
 @router.get("", response_model=BookPage)
 async def list_books(
     db: DB,
-    page: Annotated[int, Query(ge=1)] = 1,
+    page: Annotated[int, Query(ge=1, le=1_000_000)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     author: Annotated[str | None, Query(max_length=200)] = None,
     title: Annotated[str | None, Query(max_length=200)] = None,
@@ -74,7 +74,7 @@ async def list_books(
 
 
 @router.get("/{book_id}", response_model=Book)
-async def get_book(book_id: int, db: DB):
+async def get_book(book_id: PathId, db: DB):
     book = await db.books.find_one({"id": book_id}, NO_ID)
     if book is None:
         raise not_found()
@@ -96,7 +96,7 @@ async def create_book(book: BookIn, response: Response, db: DB):
 
 
 @router.patch("/{book_id}", response_model=Book)
-async def update_book(book_id: int, body: BookUpdate, db: DB):
+async def update_book(book_id: PathId, body: BookUpdate, db: DB):
     changes = body.model_dump(exclude_none=True)
     if not changes:
         raise HTTPException(400, "Send at least one field to change")
@@ -119,7 +119,7 @@ async def update_book(book_id: int, body: BookUpdate, db: DB):
 
 
 @router.delete("/{book_id}", status_code=204)
-async def delete_book(book_id: int, db: DB):
+async def delete_book(book_id: PathId, db: DB):
     result = await db.books.delete_one({"id": book_id})
     if result.deleted_count == 0:
         raise not_found()

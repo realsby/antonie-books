@@ -6,7 +6,7 @@ from pymongo import ReturnDocument
 from pymongo.asynchronous.database import AsyncDatabase
 
 from app.db import DB, IGNORE_CASE, NO_ID, next_id
-from app.models import Author, AuthorIn, AuthorUpdate, AuthorWithCount, Book, split_names
+from app.models import Author, AuthorIn, AuthorUpdate, AuthorWithCount, Book, PathId, split_names
 
 router = APIRouter(prefix="/authors", tags=["authors"])
 
@@ -95,18 +95,18 @@ async def create_author(body: AuthorIn, response: Response, db: DB):
 
 
 @router.get("/{author_id}", response_model=Author)
-async def get_author(author_id: int, db: DB):
+async def get_author(author_id: PathId, db: DB):
     return await find_author(db, author_id)
 
 
 @router.get("/{author_id}/books", response_model=list[Book])
-async def author_books(author_id: int, db: DB):
+async def author_books(author_id: PathId, db: DB):
     await find_author(db, author_id)
     return await db.books.find({"author_ids": author_id}, NO_ID).sort("id").to_list()
 
 
 @router.patch("/{author_id}", response_model=Author)
-async def update_author(author_id: int, body: AuthorUpdate, db: DB):
+async def update_author(author_id: PathId, body: AuthorUpdate, db: DB):
     author = await db.authors.find_one_and_update(
         {"id": author_id},
         {"$set": {"birth_date": date_text(body.birth_date)}},

@@ -56,6 +56,12 @@ def test_get_missing_author(api):
     assert api.get("/authors/999").status_code == 404
 
 
+def test_bad_author_id(api):
+    assert api.get("/authors/0").status_code == 422
+    assert api.get("/authors/99999999999999999999/books").status_code == 422
+    assert api.patch("/authors/abc", json={"birth_date": None}).status_code == 422
+
+
 def test_author_books(api, add_book):
     add_book(1, author="Mark Lutz")
     add_book(2, author="Bob Gregory")

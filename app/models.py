@@ -1,9 +1,15 @@
 from datetime import date, datetime
 from typing import Annotated
 
+from fastapi import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-Id = Annotated[int, Field(ge=1)]
+# MongoDB saves numbers as 64 bit. A bigger number gives an error, so we stop it here.
+MAX_INT = 2**63 - 1
+
+Id = Annotated[int, Field(ge=1, le=MAX_INT)]
+# An id in the URL, like /books/{book_id}
+PathId = Annotated[int, Path(ge=1, le=MAX_INT)]
 
 Text = Annotated[str, Field(min_length=1, max_length=200)]
 Tag = Annotated[str, Field(min_length=1, max_length=50)]

@@ -136,7 +136,7 @@ Query parameters:
 
 | Name | Default | Rule |
 |---|---|---|
-| `page` | 1 | 1 or more |
+| `page` | 1 | 1 to 1000000 |
 | `limit` | 10 | 1 to 100 |
 | `author` | | Part of the author text. Case does not matter. |
 | `title` | | Part of the title. Case does not matter. |
@@ -219,7 +219,7 @@ Rules:
 
 - `id`, `title`, `publisher` and `pages` are required. `tags` is optional.
 - Send `author` (names, comma separated) or `author_ids` (up to 20 ids), not both. See [How books and authors connect](#how-books-and-authors-connect).
-- `id` must be unique. If it is already used, you get `409`.
+- `id` is a whole number, 1 or more. It must be unique. If it is already used, you get `409`.
 - `pages` is from 1 to 100000.
 - Text fields are 1 to 200 characters. The API removes spaces at the start and end.
 - Up to 20 tags. Each tag is 1 to 50 characters.

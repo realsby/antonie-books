@@ -48,6 +48,7 @@ def test_create_same_id_twice(api, add_book):
         {"id": 1, "title": "No pages", "publisher": "P", "author": "A"},
         {"id": 1, "title": "Bad pages", "publisher": "P", "author": "A", "pages": "many"},
         {"id": -1, "title": "Bad id", "publisher": "P", "author": "A", "pages": 1},
+        {"id": 99999999999999999999, "title": "Too big id", "publisher": "P", "author": "A", "pages": 1},
         {"id": 1, "title": "No author name", "publisher": "P", "author": ",", "pages": 1},
     ],
 )
@@ -77,8 +78,9 @@ def test_get_missing_book(api):
     assert response.json() == {"detail": "Book not found"}
 
 
-def test_get_book_bad_id(api):
-    assert api.get("/books/abc").status_code == 422
+@pytest.mark.parametrize("id", ["abc", "0", "-1", "99999999999999999999"])
+def test_get_book_bad_id(api, id):
+    assert api.get(f"/books/{id}").status_code == 422
 
 
 # --- GET /books
@@ -109,7 +111,7 @@ def test_pagination(api, add_book):
     assert api.get("/books?page=4&limit=2").json()["total"] == 5
 
 
-@pytest.mark.parametrize("params", ["page=0", "limit=0", "limit=101", "page=abc"])
+@pytest.mark.parametrize("params", ["page=0", "limit=0", "limit=101", "page=abc", "page=99999999999999999999"])
 def test_bad_pagination(api, params):
     assert api.get(f"/books?{params}").status_code == 422
 
