@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -11,6 +12,29 @@ from app.db import DB, NO_ID
 from app.models import Book, BookIn, BookPage, BookUpdate
 
 router = APIRouter(prefix="/books", tags=["books"])
+
+
+def contains(text: str) -> re.Pattern:
+    # re.escape stops users from sending their own regex. Case does not matter.
+    return re.compile(re.escape(text), re.IGNORECASE)
+
+
+def exact(text: str) -> re.Pattern:
+    return re.compile(f"^{re.escape(text)}$", re.IGNORECASE)
+
+
+def make_filter(author: str | None, title: str | None, tags: str | None) -> dict:
+    query = {}
+    if author:
+        query["author"] = contains(author)
+    if title:
+        query["title"] = contains(title)
+    if tags:
+        # tags=Python,Learning -> the book must have both tags.
+        names = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        if names:
+            query["tags"] = {"$all": [exact(name) for name in names]}
+    return query
 
 
 def now() -> datetime:
@@ -38,10 +62,14 @@ async def list_books(
     db: DB,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    author: Annotated[str | None, Query(max_length=200)] = None,
+    title: Annotated[str | None, Query(max_length=200)] = None,
+    tags: Annotated[str | None, Query(max_length=500, description="Comma separated. Example: Python,Learning")] = None,
 ):
-    total = await db.books.count_documents({})
+    query = make_filter(author, title, tags)
+    total = await db.books.count_documents(query)
     skip = (page - 1) * limit
-    items = await db.books.find({}, NO_ID).sort("id").skip(skip).limit(limit).to_list()
+    items = await db.books.find(query, NO_ID).sort("id").skip(skip).limit(limit).to_list()
     return {"items": items, "page": page, "limit": limit, "total": total}
 
 

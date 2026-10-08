@@ -110,6 +110,43 @@ def test_bad_pagination(api, params):
     assert api.get(f"/books?{params}").status_code == 422
 
 
+def test_filter_by_author(api, sample_books):
+    assert ids(api.get("/books?author=Mark")) == [1]
+    assert ids(api.get("/books?author=bob")) == [2]
+    assert ids(api.get("/books?author=Nobody")) == []
+
+
+def test_filter_by_title(api, sample_books):
+    assert ids(api.get("/books?title=Python")) == [1, 2]
+    assert ids(api.get("/books?title=architecture")) == [2]
+
+
+def test_filter_by_author_and_title(api, sample_books):
+    assert ids(api.get("/books?author=Mark&title=Learning")) == [1]
+    assert ids(api.get("/books?author=Mark&title=Architecture")) == []
+
+
+def test_filter_by_tags(api, sample_books):
+    assert ids(api.get("/books?tags=Python")) == [1, 2]
+    assert ids(api.get("/books?tags=python,learning")) == [1]
+    assert ids(api.get("/books?tags=Functional Programming")) == [2]
+    assert ids(api.get("/books?tags=Learning,Functional Programming")) == []
+
+
+def test_filter_is_not_regex(api, sample_books):
+    assert ids(api.get("/books?title=.*")) == []
+
+
+def test_filter_and_pagination(api, add_book):
+    for id in range(1, 4):
+        add_book(id, author="Mark Lutz")
+    add_book(4, author="Someone Else")
+
+    response = api.get("/books?author=Mark&limit=2&page=2")
+    assert response.json()["total"] == 3
+    assert ids(response) == [3]
+
+
 # --- PATCH /books/{id}
 
 
