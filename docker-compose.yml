@@ -8,6 +8,7 @@ services:
     environment:
       MONGO_URL: mongodb://mongo:27017
       DB_NAME: books
+      SEED_DATA: "true"
     depends_on:
       mongo:
         condition: service_healthy

@@ -4,8 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pymongo import AsyncMongoClient
 
+from app import books
 from app.db import DB, setup_db
-
+from app.seed import seed
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,12 +20,15 @@ async def lifespan(app: FastAPI):
     )
     app.state.db = client[db_name]
     await setup_db(app.state.db)
+    if os.getenv("SEED_DATA") == "true":
+        await seed(app.state.db)
 
     yield
     await client.close()
 
 
 app = FastAPI(title="Books API", lifespan=lifespan)
+app.include_router(books.router)
 
 
 @app.get("/health", tags=["health"])
