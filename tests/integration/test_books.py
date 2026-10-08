@@ -1,4 +1,8 @@
 import pytest
+from pymongo import AsyncMongoClient
+
+from app.db import get_db
+from app.main import app
 
 
 def ids(response):
@@ -210,8 +214,24 @@ def test_delete_missing_book(api):
     assert api.delete("/books/999").status_code == 404
 
 
-# --- Health
+# --- Errors and health
 
 
 def test_health(api):
     assert api.get("/health").json() == {"status": "ok"}
+
+
+def test_database_down(api):
+    async def broken_db():
+        # Nothing listens on port 1, so every query fails fast.
+        client = AsyncMongoClient("mongodb://127.0.0.1:1", serverSelectionTimeoutMS=100)
+        return client.books
+
+    app.dependency_overrides[get_db] = broken_db
+    try:
+        response = api.get("/books")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Database is not available. Try again later."}

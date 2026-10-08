@@ -26,5 +26,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # Runs the tests in Docker. Start it with: docker compose run --rm tests
+  tests:
+    image: ghcr.io/astral-sh/uv:0.12-python3.14-trixie-slim
+    profiles: ["test"]
+    working_dir: /code
+    volumes:
+      - .:/code
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      # Keep the Linux venv out of the project folder.
+      UV_PROJECT_ENVIRONMENT: /tmp/venv
+      PYTHONDONTWRITEBYTECODE: "1"
+    command: uv run --frozen pytest -v
+    depends_on:
+      mongo:
+        condition: service_healthy
+
 volumes:
   mongo-data:
